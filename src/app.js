@@ -1,7 +1,7 @@
 import "bootstrap";
 import "./style.css";
 
-
+// 1) ENTIDAD Carta
 class Carta {
   constructor(valor, palo) {
     this.valor = valor;
@@ -9,152 +9,138 @@ class Carta {
   }
 }
 
-
-class IGeneradorCartas {
-  generar() { throw "No implementado"; }
-}
-
-
-class GeneradorCartasAleatorio extends IGeneradorCartas {
+// 2) GENERADOR de cartas aleatorias
+class GeneradorCartas {
   constructor() {
-    super();
-    this._valores = [
-      "2","3","4","5","6","7","8","9","10",
-      "J","Q","K","A"
-    ];
-    this._palos = ["corazones","diamantes","treboles","picas"];
+    this.valores = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+    this.palos   = ["corazones","diamantes","treboles","picas"];
   }
   generar() {
-    const valor = this._valores[
-      Math.floor(Math.random() * this._valores.length)
+    const v = this.valores[
+      Math.floor(Math.random() * this.valores.length)
     ];
-    const palo = this._palos[
-      Math.floor(Math.random() * this._palos.length)
+    const p = this.palos[
+      Math.floor(Math.random() * this.palos.length)
     ];
-    return new Carta(valor, palo);
+    return new Carta(v, p);
   }
 }
 
-
-class IDimensionadorCartas {
-  obtener() { throw "No implementado"; }
-}
-
-
-class DimensionadorUsuario extends IDimensionadorCartas {
-  constructor(idAncho, idAlto) {
-    super();
-    this._inAncho = document.getElementById(idAncho);
-    this._inAlto  = document.getElementById(idAlto);
+// 3) RENDERIZADOR en DOM
+class RenderizadorCartas {
+  constructor(selector) {
+    this.contenedor = document.querySelector(selector);
+    this.factorTexto   = 2.5;  // alto/factor → tamaño del número
+    this.factorSimbolo = 4;    // alto/factor → tamaño de las pintas
   }
-  obtener() {
-    const ancho = parseInt(this._inAncho.value) || 380;
-    const alto  = parseInt(this._inAlto.value)  || 500;
-    return { ancho, alto };
-  }
-}
 
+  renderizar(carta, ancho = 380, alto = 500) {
+    this.contenedor.innerHTML = "";
+    const cartaEl = document.createElement("div");
+    cartaEl.className = `carta ${carta.palo}`;
+    // dimensiones + tamaño número
+    cartaEl.style.width    = `${ancho}px`;
+    cartaEl.style.height   = `${alto}px`;
+    cartaEl.style.fontSize = `${Math.round(alto / this.factorTexto)}px`;
 
-class IRenderizadorCartas {
-  renderizar(carta) { throw "No implementado"; }
-}
+    // crea símbolos y les aplica tamaño dinámico
+    ["superior","inferior"].forEach(pos => {
+      const s = document.createElement("div");
+      s.className   = `simbolo ${pos}`;
+      s.textContent = RenderizadorCartas.simboloDe(carta.palo);
+      s.style.fontSize = `${Math.round(alto / this.factorSimbolo)}px`;
+      cartaEl.appendChild(s);
+    });
 
-class DOMRenderizadorCartas extends IRenderizadorCartas {
-  constructor(selectorContenedor, dimensionador) {
-    super();
-    this._contenedor    = document.querySelector(selectorContenedor);
-    this._dimensionador = dimensionador;
-  }
-  renderizar(carta) {
-    // limpia
-    this._contenedor.innerHTML = "";
-    // dimensiones
-    const { ancho, alto } = this._dimensionador.obtener();
-    // crea carta
-    const eCarta = document.createElement("div");
-    eCarta.classList.add("carta", carta.palo);
-    eCarta.style.width  = ancho + "px";
-    eCarta.style.height = alto  + "px";
-    // símbolos
-    const sup = document.createElement("div");
-    sup.classList.add("simbolo", "superior");
-    sup.textContent = this._simbolo(carta.palo);
-
-    const inf = document.createElement("div");
-    inf.classList.add("simbolo", "inferior");
-    inf.textContent = this._simbolo(carta.palo);
     // valor central
-    const val = document.createElement("span");
-    val.textContent = carta.valor;
-    // monta
-    eCarta.append(sup, val, inf);
-    this._contenedor.appendChild(eCarta);
+    const v = document.createElement("span");
+    v.textContent = carta.valor;
+    cartaEl.appendChild(v);
+
+    this.contenedor.appendChild(cartaEl);
   }
-  _simbolo(palo) {
-    switch (palo) {
-      case "corazones":  return "♥";
-      case "diamantes":  return "♦";
-      case "treboles":   return "♣";
-      case "picas":      return "♠";
-      default:           return "";
-    }
+
+  static simboloDe(palo) {
+    return {
+      corazones: "♥",
+      diamantes: "♦",
+      treboles:  "♣",
+      picas:     "♠"
+    }[palo] || "";
   }
 }
 
-
-class TemporizadorCartas {
+// 4) TEMPORIZADOR
+class Temporizador {
   constructor(intervalo, fn) {
-    this._intervalo = intervalo;
-    this._fn        = fn;
-    this._id        = null;
+    this.intervalo = intervalo;
+    this.fn        = fn;
+    this.id        = null;
   }
   iniciar() {
-    if (!this._id) this._id = setInterval(this._fn, this._intervalo);
+    if (!this.id) this.id = setInterval(this.fn, this.intervalo);
   }
-  detener() {
-    if (this._id) {
-      clearInterval(this._id);
-      this._id = null;
-    }
+  alternar() {
+    if (this.id) { clearInterval(this.id); this.id = null; }
+    else         { this.iniciar(); }
   }
 }
 
-
-window.onload = () => {
-  const generador     = new GeneradorCartasAleatorio();
-  const dimensionador = new DimensionadorUsuario("ancho-carta","alto-carta");
-  const renderizador  = new DOMRenderizadorCartas("#caja-carta", dimensionador);
-
-  const btnNueva = document.getElementById("boton-nueva-carta");
-  const btnTimer = document.getElementById("boton-temporizador");
-  const temporizador = new TemporizadorCartas(10000, mostrarCarta);
-
-  function mostrarCarta() {
-    const carta = generador.generar();
-    renderizador.renderizar(carta);
+// 5) APLICACIÓN
+class GestorCartasApp {
+  constructor() {
+    this.generador    = new GeneradorCartas();
+    this.renderizador = new RenderizadorCartas("#caja-carta");
+    this.temporizador = new Temporizador(10000, () => this.mostrar());
+    this._cacheDom();
+    this._conectaEventos();
+    this.mostrar();
   }
 
+  _cacheDom() {
+    this.inAncho  = document.getElementById("ancho-carta");
+    this.inAlto   = document.getElementById("alto-carta");
+    this.btnNew   = document.getElementById("boton-nueva-carta");
+    this.btnTimer = document.getElementById("boton-temporizador");
+  }
 
-  mostrarCarta();
+  _conectaEventos() {
+    this.btnNew.addEventListener("click", () => this.mostrar());
+    this.btnTimer.addEventListener("click", () => {
+      this.temporizador.alternar();
+      this.btnTimer.textContent = this.temporizador.id
+        ? "Temporizador ON" : "Temporizador OFF";
+    });
+    [this.inAncho, this.inAlto].forEach(i =>
+      i.addEventListener("input", () => this._ajustarCarta())
+    );
+  }
 
- 
-  btnNueva.addEventListener("click", mostrarCarta);
+  _leerDimensiones() {
+    return {
+      ancho: parseInt(this.inAncho.value) || 380,
+      alto:  parseInt(this.inAlto.value)  || 500
+    };
+  }
 
-  btnTimer.addEventListener("click", () => {
-    temporizador.iniciar();
-    btnTimer.disabled = true;
-    btnTimer.textContent = "Temporizador ON";
-  });
+  mostrar() {
+    const carta = this.generador.generar();
+    const { ancho, alto } = this._leerDimensiones();
+    this.renderizador.renderizar(carta, ancho, alto);
+  }
 
+  _ajustarCarta() {
+    const el = document.querySelector("#caja-carta .carta");
+    if (!el) return;
+    const { ancho, alto } = this._leerDimensiones();
+    el.style.width    = `${ancho}px`;
+    el.style.height   = `${alto}px`;
+    el.style.fontSize = `${Math.round(alto / this.renderizador.factorTexto)}px`;
+    // ajusta pintas
+    el.querySelectorAll(".simbolo").forEach(s => {
+      s.style.fontSize = `${Math.round(alto / this.renderizador.factorSimbolo)}px`;
+    });
+  }
+}
 
-  ["ancho-carta","alto-carta"].forEach(id => {
-    document.getElementById(id)
-      .addEventListener("input", () => {
-        const ultima = document.querySelector("#caja-carta .carta");
-        if (!ultima) return;
-        const { ancho, alto } = dimensionador.obtener();
-        ultima.style.width  = ancho + "px";
-        ultima.style.height = alto  + "px";
-      });
-  });
-};
+window.onload = () => new GestorCartasApp();

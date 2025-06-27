@@ -5,37 +5,22 @@
     <link rel="icon" href="./assets/img/4geeks.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Generador de Cartas Aleatorias</title>
-
-    
-    <link
-      rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.2.0/css/all.css"
-      crossorigin="anonymous"
-    />
     <link rel="stylesheet" href="style.css" />
   </head>
+
   <body>
+    <!-- Carta ocupa todo el espacio disponible -->
+    <main id="caja-carta"></main>
 
-    
-    <div id="caja-carta"></div>
-
-   
-    <div class="opciones">
+    <!-- Controles minimalistas al pie -->
+    <footer class="opciones">
       <div class="controles">
-        <input
-          id="ancho-carta"
-          type="number"
-          placeholder="Ancho px"
-        />
-        <input
-          id="alto-carta"
-          type="number"
-          placeholder="Alto px"
-        />
+        <input id="ancho-carta" type="number" placeholder="Ancho px" />
+        <input id="alto-carta"  type="number" placeholder="Alto px" />
         <button id="boton-nueva-carta">Nueva Carta</button>
         <button id="boton-temporizador">⏱ On/Off</button>
       </div>
-    </div>
+    </footer>
 
     <script type="module" src="app.js"></script>
   </body>
